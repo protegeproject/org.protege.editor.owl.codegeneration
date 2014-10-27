@@ -7,6 +7,10 @@ import org.protege.owl.codegeneration.WrappedIndividual;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
 import org.semanticweb.owlapi.model.OWLOntology;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import org.protege.owl.codegeneration.IRI;
+
 /**
  * ${javadoc}
  * <p>
@@ -14,5 +18,6 @@ import org.semanticweb.owlapi.model.OWLOntology;
  * Source Class: ${interfaceName} <br>
  * @version generated on ${date} by ${user}
  */
-
+@SuppressWarnings("unused")
+@IRI("${classIri}")
 public interface ${interfaceName} extends ${superInterfaces} {

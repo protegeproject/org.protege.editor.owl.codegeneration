@@ -5,15 +5,17 @@
     
     ${atNotNull} 
     public ${propertyRangeForClass} get${OwlProperty}() {
-    	return getDelegate().getPropertyValues(getOwlIndividual(), Vocabulary.${VocabProperty}, ${propertyRange}.class);
+    	Collection<? extends ${propertyRange}> tmp = 
+			 getDelegate().getPropertyValues(getOwlIndividual(), Vocabulary.${VocabProperty}, ${propertyRange}.class);
+		return tmp.isEmpty() ? null : (${propertyRangeForClass}) tmp.iterator().next();        
     }
 
     public boolean has${OwlProperty}() {
-		return !getDelegate().getPropertyValues(getOwlIndividual(), Vocabulary.${VocabProperty}, ${propertyRange}.class).isEmpty();
+		return !(get${OwlProperty}()==null);
     }
 
-    //public void add${OwlProperty}(${propertyRange} new${OwlProperty}) {
-   	public void add${OwlProperty}(Object new${OwlProperty}) {
+	//public void add${OwlProperty}(${propertyRange} new${OwlProperty}) {
+	public void add${OwlProperty}(Object new${OwlProperty}) {
 	    getDelegate().addPropertyValue(getOwlIndividual(), Vocabulary.${VocabProperty}, new${OwlProperty});
     }
 
@@ -21,4 +23,3 @@
     public void remove${OwlProperty}(Object old${OwlProperty}) {
 		getDelegate().removePropertyValue(getOwlIndividual(), Vocabulary.${VocabProperty}, old${OwlProperty});
     }
-

@@ -4,6 +4,7 @@ import static org.protege.owl.codegeneration.SubstitutionVariable.CAPITALIZED_PR
 import static org.protege.owl.codegeneration.SubstitutionVariable.CLASS_IRI;
 import static org.protege.owl.codegeneration.SubstitutionVariable.DATE;
 import static org.protege.owl.codegeneration.SubstitutionVariable.FACTORY_CLASS_NAME;
+import static org.protege.owl.codegeneration.SubstitutionVariable.FACTORY_PACKAGE_NAME;
 import static org.protege.owl.codegeneration.SubstitutionVariable.IMPLEMENTATION_NAME;
 import static org.protege.owl.codegeneration.SubstitutionVariable.INTERFACE_LIST;
 import static org.protege.owl.codegeneration.SubstitutionVariable.INTERFACE_NAME;
@@ -14,6 +15,7 @@ import static org.protege.owl.codegeneration.SubstitutionVariable.PROPERTY_IRI;
 import static org.protege.owl.codegeneration.SubstitutionVariable.UPPERCASE_CLASS;
 import static org.protege.owl.codegeneration.SubstitutionVariable.UPPERCASE_PROPERTY;
 import static org.protege.owl.codegeneration.SubstitutionVariable.USER;
+import static org.protege.owl.codegeneration.SubstitutionVariable.NOT_NULL_ANNOT;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +24,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Date;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -41,7 +43,7 @@ import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 
 public class DefaultWorker implements Worker {
-	private EnumMap<CodeGenerationPhase, String> templateMap = new EnumMap<CodeGenerationPhase, String>(CodeGenerationPhase.class);
+	private HashMap<String, String> templateMap = new HashMap<String, String>();
 	private OWLOntology owlOntology;
 	private CodeGenerationOptions options;
 	private CodeGenerationNames names;
@@ -126,14 +128,14 @@ public class DefaultWorker implements Worker {
     	return getInterfaceFile(Constants.VOCABULARY_CLASS_NAME);
     }
     
-    public File getFactoryFile() {
-    	return getInterfaceFile(options.getFactoryClassName());
-    }
-
-
-	public String getTemplate(CodeGenerationPhase phase, OWLClass owlClass, Object owlProperty) {
+    public String getTemplate(CodeGenerationPhase phase, OWLClass owlClass, OWLEntity owlProperty) {
+    	
     	String resource = "/" + phase.getTemplateName();
-		String template = templateMap.get(phase);
+    	if (owlClass != null && owlProperty != null) {
+    		resource = resource + ( propertyDeclarations.get(owlClass, owlProperty).isCollection() ? "" : ".single" );
+    	}
+		
+    	String template = templateMap.get(resource);
 		if (template == null) {
 			try {
 				URL u = CodeGenerationOptions.class.getResource(resource);
@@ -149,7 +151,7 @@ public class DefaultWorker implements Worker {
 					buffer.append(characters, 0, charsRead);
 				}
 				template = buffer.toString();
-				templateMap.put(phase, template);
+				templateMap.put(resource, template);
 				reader.close();
 			}
 			catch (IOException e) {
@@ -174,7 +176,7 @@ public class DefaultWorker implements Worker {
 			break;
 		case CREATE_OBJECT_PROPERTY_VOCABULARY:
 		case CREATE_DATA_PROPERTY_VOCABULARY:
-			configurePropertySubstitutions(substitutions, owlProperty);
+			configurePropertySubstitutions(substitutions, owlClass, owlProperty);
 			break;
 		case CREATE_INTERFACE_HEADER:
 		case CREATE_IMPLEMENTATION_HEADER:
@@ -186,8 +188,10 @@ public class DefaultWorker implements Worker {
 		case CREATE_OBJECT_PROPERTY_INTERFACE:
 		case CREATE_OBJECT_PROPERTY_IMPLEMENTATION:
 			configureClassSubstitutions(substitutions, owlClass);
-			configurePropertySubstitutions(substitutions, owlProperty);
+			configurePropertySubstitutions(substitutions, owlClass, owlProperty);
 	        propertyDeclarations.get(owlClass, owlProperty).configureSubstitutions(substitutions);
+			break;
+		default:
 			break;
 			
 		}
@@ -201,6 +205,7 @@ public class DefaultWorker implements Worker {
         substitutions.put(DATE, new Date().toString());
         substitutions.put(USER, System.getProperty("user.name"));
         substitutions.put(FACTORY_CLASS_NAME, options.getFactoryClassName());
+        substitutions.put(FACTORY_PACKAGE_NAME, options.getFactoryPackageName());
     }
 
 	private void configureClassSubstitutions(Map<SubstitutionVariable, String> substitutions, 
@@ -215,17 +220,47 @@ public class DefaultWorker implements Worker {
         substitutions.put(INTERFACE_LIST, getSuperInterfaceList(owlClass));
     }
 
+	private void doNullAnnotations(Map<SubstitutionVariable, String> substitutions, OWLClass owlClass, OWLEntity owlProperty) {
+		boolean nullable = false;
+		boolean singleton = false;
+		if (owlProperty instanceof OWLObjectProperty) {
+			nullable = inference.isNullable(owlClass, (OWLObjectProperty) owlProperty);
+			singleton = inference.isSingleton(owlClass, (OWLObjectProperty) owlProperty);
+		} else {
+			nullable = inference.isNullable(owlClass, (OWLDataProperty) owlProperty);
+			singleton = inference.isSingleton(owlClass, (OWLDataProperty) owlProperty);
+		}
+		
+		if (nullable) {
+			if (singleton) {
+				// 0..1
+				substitutions.put(NOT_NULL_ANNOT,"");
+			} else {
+				// 0..*
+				substitutions.put(NOT_NULL_ANNOT,"");
+			}
+		} else {
+			if (singleton) {
+				// 1..1
+				substitutions.put(NOT_NULL_ANNOT,"@NotNull");
+			} else {
+				// 1..*
+				substitutions.put(NOT_NULL_ANNOT,"@NotNull @Size(min=1)");
+			}
+		}
+	}
+	
 	private void configurePropertySubstitutions(Map<SubstitutionVariable, String> substitutions,
-                                                OWLEntity owlProperty) {
+				OWLClass owlClass, OWLEntity owlProperty) {
         String propertyName;
         if (owlProperty instanceof OWLObjectProperty) {
             OWLObjectProperty owlObjectProperty = (OWLObjectProperty) owlProperty;
             propertyName = names.getObjectPropertyName(owlObjectProperty);
-        }
-        else {
+        } else {
             OWLDataProperty owlDataProperty = (OWLDataProperty) owlProperty;
             propertyName = names.getDataPropertyName(owlDataProperty);
         }
+        if (owlClass != null) doNullAnnotations(substitutions,owlClass, owlProperty);
         String propertyCapitalized = NamingUtilities.convertInitialLetterToUpperCase(propertyName);
         String propertyUpperCase = propertyName.toUpperCase();
         if (owlProperty instanceof OWLObjectProperty) {
@@ -239,6 +274,7 @@ public class DefaultWorker implements Worker {
         substitutions.put(CAPITALIZED_PROPERTY, propertyCapitalized);
         substitutions.put(UPPERCASE_PROPERTY, propertyUpperCase);
         substitutions.put(PROPERTY_IRI, owlProperty.getIRI().toString());
+       
     }
 	
 
@@ -256,7 +292,10 @@ public class DefaultWorker implements Worker {
 	    return new File(options.getOutputFolder(), pack + name + ".java");
 	}
 	
-
+	public File getFactoryFile() {
+	    return new File(options.getOutputFolder(),
+	    		options.getFactoryFqn().replace('.', '/')+".java");
+	}
 
 	private String getSuperInterfaceList(OWLClass owlClass) {
 	    String base = getBaseInterface(owlClass);

@@ -4,9 +4,9 @@
      */
      
     /**
-     * Gets all property values for the ${owlProperty} property.<p>
+     * Gets the property value for the ${owlProperty} property.<p>
      * ${javadoc}
-     * @returns a collection of ${propertyRangeForInterface} values for the ${owlProperty} property.
+     * @returns a ${propertyRangeForInterface} for the ${owlProperty} property.
      */
     ${atNotNull} @IRI("${propertyIri}")
     ${propertyRangeForInterface} get${OwlProperty}();
@@ -26,7 +26,7 @@
     //void add${OwlProperty}(${propertyRange} new${OwlProperty});
 	void add${OwlProperty}(Object new${OwlProperty});
 
-    
+
     /**
      * Removes a ${owlProperty} property value.<p>
      * ${javadoc}
@@ -34,4 +34,5 @@
      */
     //void remove${OwlProperty}(${propertyRange} old${OwlProperty});
 	void remove${OwlProperty}(Object old${OwlProperty});
+
 

@@ -2,6 +2,7 @@ package org.protege.owl.codegeneration.property;
 
 import static org.protege.owl.codegeneration.SubstitutionVariable.PROPERTY_RANGE;
 import static org.protege.owl.codegeneration.SubstitutionVariable.PROPERTY_RANGE_FOR_CLASS;
+import static org.protege.owl.codegeneration.SubstitutionVariable.PROPERTY_RANGE_FOR_INTERFACE;
 
 import java.util.Map;
 
@@ -48,18 +49,25 @@ public class JavaDataPropertyDeclarations implements JavaPropertyDeclarations {
 
 	public void configureSubstitutions(Map<SubstitutionVariable, String> substitutions) {
         substitutions.put(PROPERTY_RANGE_FOR_CLASS, getDataPropertyRangeForClass());
+        substitutions.put(PROPERTY_RANGE_FOR_INTERFACE, getDataPropertyRangeForClass());
         substitutions.put(PROPERTY_RANGE, getDataPropertyRange());
 	}
 	
+	public boolean isCollection() {
+		return !inference.isSingleton(owlClass, property);
+	}
 
 	private String getDataPropertyRange() {
-	    OWLDatatype  dt = inference.getRange(property);
+	    OWLDatatype  dt = inference.getRange(owlClass, property);
 	    return getDataPropertyJavaName(dt);
 	}
 
 	private String getDataPropertyRangeForClass() {
 	    OWLDatatype  dt = inference.getRange(owlClass, property);
-	    return getDataPropertyJavaName(dt);
+	    return 
+	    		(isCollection() ? "Collection<? extends " : "") +
+	    		getDataPropertyJavaName(dt) +
+	    		(isCollection() ? ">" : "");
 	}
 
 	/**

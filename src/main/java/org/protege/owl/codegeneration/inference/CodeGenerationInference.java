@@ -33,6 +33,14 @@ public interface CodeGenerationInference {
 	
 	OWLClass getRange(OWLClass owlClass, OWLObjectProperty p);
 	
+	boolean isNullable(OWLClass owlClass, OWLObjectProperty p);
+	
+	boolean isNullable(OWLClass owlClass, OWLDataProperty p);
+	
+	boolean isSingleton(OWLClass owlClass, OWLObjectProperty p);
+	
+	boolean isSingleton(OWLClass owlClass, OWLDataProperty p);
+		
 	OWLDatatype getRange(OWLDataProperty p);
 	
 	OWLDatatype getRange(OWLClass owlClass, OWLDataProperty p);
@@ -46,5 +54,7 @@ public interface CodeGenerationInference {
 	Collection<OWLNamedIndividual> getPropertyValues(OWLNamedIndividual i, OWLObjectProperty p);
 	
     Collection<OWLLiteral> getPropertyValues(OWLNamedIndividual i, OWLDataProperty p);
+
+	Collection<OWLClass> getAllOwlClasses();
 
 }
