@@ -3,11 +3,6 @@
      * Object Property ${propertyIri}
      */
      
-    public Collection<? extends ${propertyRange}> get${OwlProperty}() {
-        return getDelegate().getPropertyValues(getOwlIndividual(),
-                                               Vocabulary.${VocabProperty},
-                                               ${propertyRangeImplementation}.class);
-    }
 
     public boolean has${OwlProperty}() {
 	   return !get${OwlProperty}().isEmpty();
@@ -24,4 +19,3 @@
                                           Vocabulary.${VocabProperty},
                                           old${OwlProperty});
     }
-

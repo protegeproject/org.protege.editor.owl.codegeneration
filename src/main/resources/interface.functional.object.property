@@ -2,13 +2,7 @@
     /* ***************************************************
      * Property ${propertyIri}
      */
-     
-    /**
-     * Gets all property values for the ${owlProperty} property.<p>
-     * ${javadoc}
-     * @returns a collection of values for the ${owlProperty} property.
-     */
-    Collection<? extends ${propertyRange}> get${OwlProperty}();
+
 
     /**
      * Checks if the class has a ${owlProperty} property value.<p>
@@ -30,4 +24,3 @@
      * @param old${OwlProperty} the ${owlProperty} property value to be removed.
      */
     void remove${OwlProperty}(${propertyRange} old${OwlProperty});
-
